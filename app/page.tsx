@@ -2,6 +2,8 @@ import { AddBookForm } from "@/components/add-book-form";
 import { BookCard } from "@/components/book-card";
 import { getBooks } from "@/lib/actions";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const books = await getBooks();
 

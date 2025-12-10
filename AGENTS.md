@@ -24,6 +24,7 @@
 - Use `cn()` for conditional Tailwind classes
 - Define DB schemas in `lib/db/schema.ts` using Drizzle's pgTable
 - Prefer functional components with TypeScript types
+- Never use `any` type explicitly or implicitly - always provide proper types
 
 ## Database & Migrations (Drizzle + Supabase)
 

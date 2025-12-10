@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -10,28 +11,37 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { Book, Note } from "@/lib/types";
+import { createNote } from "@/lib/actions";
+
+interface Note {
+  id: string;
+  content: string;
+  createdAt: Date;
+}
+
+interface Book {
+  id: string;
+  title: string;
+  author: string;
+  notes: Note[];
+  createdAt: Date;
+}
 
 interface BookCardProps {
   book: Book;
-  onAddNote: (bookId: string, note: Note) => void;
 }
 
-export function BookCard({ book, onAddNote }: BookCardProps) {
-  const [noteContent, setNoteContent] = useState("");
+export function BookCard({ book }: BookCardProps) {
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
-  const handleAddNote = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!noteContent.trim()) return;
-
-    const newNote: Note = {
-      id: crypto.randomUUID(),
-      content: noteContent.trim(),
-      createdAt: new Date(),
-    };
-
-    onAddNote(book.id, newNote);
-    setNoteContent("");
+  const handleAddNote = async (formData: FormData): Promise<void> => {
+    startTransition(async () => {
+      const result = await createNote(formData);
+      if (!result.error) {
+        router.refresh();
+      }
+    });
   };
 
   return (
@@ -41,15 +51,11 @@ export function BookCard({ book, onAddNote }: BookCardProps) {
         <CardDescription>by {book.author}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <form onSubmit={handleAddNote} className="flex flex-col gap-2">
-          <Textarea
-            placeholder="Add a note..."
-            value={noteContent}
-            onChange={(e) => setNoteContent(e.target.value)}
-            rows={2}
-          />
-          <Button type="submit" size="sm">
-            Add Note
+        <form action={handleAddNote} className="flex flex-col gap-2">
+          <input type="hidden" name="bookId" value={book.id} />
+          <Textarea name="content" placeholder="Add a note..." rows={2} />
+          <Button type="submit" size="sm" disabled={isPending}>
+            {isPending ? "Adding..." : "Add Note"}
           </Button>
         </form>
 
@@ -66,7 +72,7 @@ export function BookCard({ book, onAddNote }: BookCardProps) {
                 >
                   <p>{note.content}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {note.createdAt.toLocaleDateString()}
+                    {new Date(note.createdAt).toLocaleDateString()}
                   </p>
                 </li>
               ))}
